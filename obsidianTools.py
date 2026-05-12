@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import calendar
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -70,6 +71,12 @@ def createDaily(dt):
 
     print(f"Created: {path}")
 
+def createMonth(year, month):
+    numberOfDays = calendar.monthrange(year, month)[1]
+
+    for day in range(1, numberOfDays + 1):
+        dt = datetime(year, month, day)
+        createDaily(dt)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -88,7 +95,14 @@ def main():
             datetime.strptime(args.date, "%Y-%m-%d")
         )
     )
-
+    monthParser = subparsers.add_parser("month")
+    monthParser.add_argument("month", help="Month in YYYY-MM format")
+    monthParser.set_defaults(
+        func=lambda args: createMonth(
+            int(args.month[0:4]),
+            int(args.month[5:7])
+        )
+    )
     args = parser.parse_args()
     args.func(args)
 
