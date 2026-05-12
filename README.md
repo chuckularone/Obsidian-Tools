@@ -9,6 +9,7 @@ See https://github.com/chuckularone/WeatherCharts for how the data gets there
 
 
 > [!info] Weather
+>
 > 🌡️ **Temperature:** 62 °F  
 > 🧭 **Pressure:** 30.10 inHg  
 > 💧 **Humidity:** 43%  
