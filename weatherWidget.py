@@ -43,7 +43,7 @@ def buildMarkdown(data):
     if temp >= 100:
         calloutType = "danger"
 
-    return f"""# Current Weather
+    return f"""# KPAASTON20
 
 _Last updated: {now:%A, %B %-d, %Y at %-I:%M %p}_
 
