@@ -6,14 +6,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 VAULT_ROOT = Path("/media/cmckenna/cmckenna/obsidian/My Thoughts")
-
-
-def ordinal(n):
-    if 10 <= n % 100 <= 20:
-        suffix = "th"
-    else:
-        suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
-    return f"{n}{suffix}"
+EVENT_DAYS_FILE = VAULT_ROOT / "Misc_Notes" / "Event_Days.md"
 
 
 def monthDir(dt):
@@ -21,12 +14,7 @@ def monthDir(dt):
 
 
 def dailyPath(dt):
-    return (
-        VAULT_ROOT
-        / f"{dt:%Y}"
-        / monthDir(dt)
-        / f"{dt:%Y_%m_%d}.md"
-    )
+    return VAULT_ROOT / f"{dt:%Y}" / monthDir(dt) / f"{dt:%Y_%m_%d}.md"
 
 
 def obsidianDailyLink(dt, label):
@@ -37,7 +25,54 @@ def monthlyLink(dt):
     return f"[[{dt:%Y}/{dt:%B}_{dt:%Y}|{dt:%B} {dt:%Y}]]"
 
 
-def buildDailyNote(dt):
+def loadAnnualEvents():
+    events = {}
+
+    if not EVENT_DAYS_FILE.exists():
+        return events
+
+    with EVENT_DAYS_FILE.open("r", encoding="utf-8") as file:
+        for line in file:
+            line = line.strip()
+
+            if not line:
+                continue
+
+            parts = line.split(maxsplit=1)
+
+            if len(parts) != 2:
+                continue
+
+            dateText, eventText = parts
+
+            try:
+                datetime.strptime(dateText, "%m/%d")
+            except ValueError:
+                continue
+
+            events.setdefault(dateText, []).append(eventText)
+
+    return events
+
+
+def buildAnnualEventsBlock(dt, annualEvents):
+    key = f"{dt:%m/%d}"
+    events = annualEvents.get(key, [])
+
+    if not events:
+        return ""
+
+    lines = [
+        "> [!example] Annual events"
+    ]
+
+    for event in events:
+        lines.append(f"> - {event}")
+
+    return "\n".join(lines) + "\n\n"
+
+
+def buildDailyNote(dt, annualEvents):
     yesterday = dt - timedelta(days=1)
     tomorrow = dt + timedelta(days=1)
 
@@ -51,6 +86,7 @@ def buildDailyNote(dt):
         f"> - [ ] todo items\n"
         f"> - [ ] \n"
         f"\n"
+        f"{buildAnnualEventsBlock(dt, annualEvents)}"
         f"> [!info] Health Data \n"
         f">Health Notes/Blood Pressure\n"
         f">\n"
@@ -58,7 +94,7 @@ def buildDailyNote(dt):
     )
 
 
-def createDaily(dt):
+def createDaily(dt, annualEvents):
     path = dailyPath(dt)
     path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -66,17 +102,38 @@ def createDaily(dt):
         print(f"Already exists: {path}")
         return
 
-    content = buildDailyNote(dt)
+    content = buildDailyNote(dt, annualEvents)
     path.write_text(content, encoding="utf-8")
 
     print(f"Created: {path}")
 
-def createMonth(year, month):
+
+def createMonth(year, month, annualEvents):
     numberOfDays = calendar.monthrange(year, month)[1]
 
     for day in range(1, numberOfDays + 1):
         dt = datetime(year, month, day)
-        createDaily(dt)
+        createDaily(dt, annualEvents)
+
+
+def parseDailyDate(dateText):
+    try:
+        return datetime.strptime(dateText, "%Y-%m-%d")
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            "Date must be in YYYY-MM-DD format"
+        )
+
+
+def parseMonth(monthText):
+    try:
+        dt = datetime.strptime(monthText, "%Y-%m")
+        return dt.year, dt.month
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            "Month must be in YYYY-MM format"
+        )
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -86,25 +143,28 @@ def main():
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     todayParser = subparsers.add_parser("today")
-    todayParser.set_defaults(func=lambda args: createDaily(datetime.today()))
+    todayParser.set_defaults(commandName="today")
 
     dailyParser = subparsers.add_parser("daily")
-    dailyParser.add_argument("date", help="Date in YYYY-MM-DD format")
-    dailyParser.set_defaults(
-        func=lambda args: createDaily(
-            datetime.strptime(args.date, "%Y-%m-%d")
-        )
-    )
+    dailyParser.add_argument("date", type=parseDailyDate, help="Date in YYYY-MM-DD format")
+    dailyParser.set_defaults(commandName="daily")
+
     monthParser = subparsers.add_parser("month")
-    monthParser.add_argument("month", help="Month in YYYY-MM format")
-    monthParser.set_defaults(
-        func=lambda args: createMonth(
-            int(args.month[0:4]),
-            int(args.month[5:7])
-        )
-    )
+    monthParser.add_argument("month", type=parseMonth, help="Month in YYYY-MM format")
+    monthParser.set_defaults(commandName="month")
+
     args = parser.parse_args()
-    args.func(args)
+    annualEvents = loadAnnualEvents()
+
+    if args.commandName == "today":
+        createDaily(datetime.today(), annualEvents)
+
+    elif args.commandName == "daily":
+        createDaily(args.date, annualEvents)
+
+    elif args.commandName == "month":
+        year, month = args.month
+        createMonth(year, month, annualEvents)
 
 
 if __name__ == "__main__":
