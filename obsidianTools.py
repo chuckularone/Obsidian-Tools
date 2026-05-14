@@ -83,7 +83,7 @@ def buildDailyNote(dt, annualEvents):
         f"{obsidianDailyLink(yesterday, 'Yesterday')} – "
         f"{obsidianDailyLink(tomorrow, 'Tomorrow')}\n\n"
         f"> [!abstract] To do\n"
-        f"> - [ ] todo items\n"
+        f"> - [ ] \n"
         f"> - [ ] \n"
         f"\n"
         f"{buildAnnualEventsBlock(dt, annualEvents)}"
