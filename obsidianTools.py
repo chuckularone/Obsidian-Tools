@@ -21,8 +21,8 @@ def obsidianDailyLink(dt, label):
     return f"[[{dt:%Y}/{monthDir(dt)}/{dt:%Y_%m_%d}|{label}]]"
 
 
-def monthlyLink(dt):
-    return f"[[{dt:%Y}/{dt:%B}_{dt:%Y}|{dt:%B} {dt:%Y}]]"
+def todoLink(dt):
+    return f"[[Misc_Notes/Longterm_todoList|LT Todo]]"
 
 
 def loadAnnualEvents():
@@ -79,7 +79,7 @@ def buildDailyNote(dt, annualEvents):
     return (
         f"**=={dt:%A}==**\n"
         f"[[My Notes]] – "
-        f"{monthlyLink(dt)} – "
+        f"{todoLink(dt)} – "
         f"{obsidianDailyLink(yesterday, 'Yesterday')} – "
         f"{obsidianDailyLink(tomorrow, 'Tomorrow')}\n\n"
         f"> [!abstract] To do\n"
