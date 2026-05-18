@@ -229,7 +229,7 @@ Select a day from the calendar grid.
 
 
 ---
-### weatherWidget.py
+# weatherWidget.py
 Runs every 10 minutes and outputs the current weather for my home weather station
 See https://github.com/chuckularone/WeatherCharts for how the data gets there
 
