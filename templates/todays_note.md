@@ -1,0 +1,1 @@
+[[<% tp.date.now("YYYY/MM_MMMM/YYYY_MM_DD") %>|Today's Note]]
