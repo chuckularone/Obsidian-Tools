@@ -130,7 +130,7 @@ def createMonthIndex(year, month):
     lines = [
         f"# {dt:%B} {year}",
         "",
-        "| Sunday | Monday | Tuesday | Wednesday | Thursday | Friday | Saturday |",
+        "| Sun | Mon | Tue | Wed | Thu | Fri | Sat |",
         "|---|---|---|---|---|---|---|",
     ]
 
