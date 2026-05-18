@@ -54,6 +54,38 @@ def loadAnnualEvents():
 
     return events
 
+def createMonthIndex(year, month):
+    dt = datetime(year, month, 1)
+    path = VAULT_ROOT / f"{year}" / f"{dt:%B}_{year}.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    if path.exists():
+        print(f"Already exists: {path}")
+        return
+
+    cal = calendar.Calendar(firstweekday=6)  # Sunday first
+
+    lines = [
+        f"# {dt:%B} {year}",
+        "",
+        "| Sunday | Monday | Tuesday | Wednesday | Thursday | Friday | Saturday |",
+        "|---|---|---|---|---|---|---|",
+    ]
+
+    for week in cal.monthdatescalendar(year, month):
+        row = []
+
+        for day in week:
+            if day.month == month:
+                link = f"[[{day:%Y}/{monthDir(day)}/{day:%Y_%m_%d}]]"
+                row.append(link)
+            else:
+                row.append("")
+
+        lines.append("| " + " | ".join(row) + " |")
+
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"Created: {path}")
 
 def buildAnnualEventsBlock(dt, annualEvents):
     key = f"{dt:%m/%d}"
@@ -153,6 +185,10 @@ def main():
     monthParser.add_argument("month", type=parseMonth, help="Month in YYYY-MM format")
     monthParser.set_defaults(commandName="month")
 
+    indexParser = subparsers.add_parser("index")
+    indexParser.add_argument("month", type=parseMonth, help="Month in YYYY-MM format")
+    indexParser.set_defaults(commandName="index")
+
     args = parser.parse_args()
     annualEvents = loadAnnualEvents()
 
@@ -166,6 +202,9 @@ def main():
         year, month = args.month
         createMonth(year, month, annualEvents)
 
+    elif args.commandName == "index":
+        year, month = args.month
+        createMonthIndex(year, month)
 
 if __name__ == "__main__":
     main()
