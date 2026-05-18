@@ -21,8 +21,8 @@ def obsidianDailyLink(dt, label):
     return f"[[{dt:%Y}/{monthDir(dt)}/{dt:%Y_%m_%d}|{label}]]"
 
 
-def todoLink(dt):
-    return f"[[Misc_Notes/Longterm_todoList|LT Todo]]"
+def monthlyLink(dt):
+    return f"[[{dt:%Y}/{dt:%B}_{dt:%Y}|{dt:%B} {dt:%Y}]]"
 
 
 def loadAnnualEvents():
@@ -54,38 +54,6 @@ def loadAnnualEvents():
 
     return events
 
-def createMonthIndex(year, month):
-    dt = datetime(year, month, 1)
-    path = VAULT_ROOT / f"{year}" / f"{dt:%B}_{year}.md"
-    path.parent.mkdir(parents=True, exist_ok=True)
-
-    if path.exists():
-        print(f"Already exists: {path}")
-        return
-
-    cal = calendar.Calendar(firstweekday=6)  # Sunday first
-
-    lines = [
-        f"# {dt:%B} {year}",
-        "",
-        "| Sunday | Monday | Tuesday | Wednesday | Thursday | Friday | Saturday |",
-        "|---|---|---|---|---|---|---|",
-    ]
-
-    for week in cal.monthdatescalendar(year, month):
-        row = []
-
-        for day in week:
-            if day.month == month:
-                link = f"[[{day:%Y}/{monthDir(day)}/{day:%Y_%m_%d}]]"
-                row.append(link)
-            else:
-                row.append("")
-
-        lines.append("| " + " | ".join(row) + " |")
-
-    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"Created: {path}")
 
 def buildAnnualEventsBlock(dt, annualEvents):
     key = f"{dt:%m/%d}"
@@ -111,11 +79,11 @@ def buildDailyNote(dt, annualEvents):
     return (
         f"**=={dt:%A}==**\n"
         f"[[My Notes]] – "
-        f"{todoLink(dt)} – "
+        f"{monthlyLink(dt)} – "
         f"{obsidianDailyLink(yesterday, 'Yesterday')} – "
         f"{obsidianDailyLink(tomorrow, 'Tomorrow')}\n\n"
         f"> [!abstract] To do\n"
-        f"> - [ ] \n"
+        f"> - [ ] todo items\n"
         f"> - [ ] \n"
         f"\n"
         f"{buildAnnualEventsBlock(dt, annualEvents)}"
@@ -148,6 +116,40 @@ def createMonth(year, month, annualEvents):
         createDaily(dt, annualEvents)
 
 
+def createMonthIndex(year, month):
+    dt = datetime(year, month, 1)
+    path = VAULT_ROOT / f"{year}" / f"{dt:%B}_{year}.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    if path.exists():
+        print(f"Already exists: {path}")
+        return
+
+    cal = calendar.Calendar(firstweekday=6)
+
+    lines = [
+        f"# {dt:%B} {year}",
+        "",
+        "| Sunday | Monday | Tuesday | Wednesday | Thursday | Friday | Saturday |",
+        "|---|---|---|---|---|---|---|",
+    ]
+
+    for week in cal.monthdatescalendar(year, month):
+        row = []
+
+        for day in week:
+            if day.month == month:
+                link = obsidianDailyLink(day, str(day.day)).replace("|", "\\|")
+                row.append(link)
+            else:
+                row.append("")
+
+        lines.append("| " + " | ".join(row) + " |")
+
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"Created: {path}")
+
+
 def parseDailyDate(dateText):
     try:
         return datetime.strptime(dateText, "%Y-%m-%d")
@@ -178,15 +180,27 @@ def main():
     todayParser.set_defaults(commandName="today")
 
     dailyParser = subparsers.add_parser("daily")
-    dailyParser.add_argument("date", type=parseDailyDate, help="Date in YYYY-MM-DD format")
+    dailyParser.add_argument(
+        "date",
+        type=parseDailyDate,
+        help="Date in YYYY-MM-DD format"
+    )
     dailyParser.set_defaults(commandName="daily")
 
     monthParser = subparsers.add_parser("month")
-    monthParser.add_argument("month", type=parseMonth, help="Month in YYYY-MM format")
+    monthParser.add_argument(
+        "month",
+        type=parseMonth,
+        help="Month in YYYY-MM format"
+    )
     monthParser.set_defaults(commandName="month")
 
     indexParser = subparsers.add_parser("index")
-    indexParser.add_argument("month", type=parseMonth, help="Month in YYYY-MM format")
+    indexParser.add_argument(
+        "month",
+        type=parseMonth,
+        help="Month in YYYY-MM format"
+    )
     indexParser.set_defaults(commandName="index")
 
     args = parser.parse_args()
@@ -205,6 +219,7 @@ def main():
     elif args.commandName == "index":
         year, month = args.month
         createMonthIndex(year, month)
+
 
 if __name__ == "__main__":
     main()
